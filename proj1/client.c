@@ -1,52 +1,46 @@
-// #include <stdio.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <assert.h>
+#include <errno.h>
+#include <string.h>
 
-// int
-// main(int argc, char const ** argv)
-// {
-//     return 0;
-// }
+int
+main(int argc, char const ** argv)
+{
+    //syscall create socket TCP/IPv4
+    int serv_sfd = socket(PF_INET, SOCK_STREAM, 0); assert(serv_sfd != -1 && "Socket creation syscall failure.");
+    printf("socket_fd:\t%d\n", serv_sfd);
 
-// Client side C/C++ program to demonstrate Socket programming 
-#include <stdio.h> 
-#include <sys/socket.h> 
-#include <stdlib.h> 
-#include <netinet/in.h> 
-#include <string.h> 
-#define PORT 8080 
+    //syscall setsockopt to modify socket construction
+    //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
 
-int main(int argc, char const *argv[]) 
-{ 
-	struct sockaddr_in address; 
-	int sock = 0, valread; 
-	struct sockaddr_in serv_addr; 
-	char *hello = "Hello from client"; 
-	char buffer[1024] = {0}; 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-	{ 
-		printf("\n Socket creation error \n"); 
-		return -1; 
-	} 
+    struct sockaddr_in serv_addr;
+    serv_addr.sin_family = PF_INET;
 
-	memset(&serv_addr, '0', sizeof(serv_addr)); 
+    //Server will listen to 8080, clients will connect to localhost:8080 to send to server
+    int serv_port = 8080;
+    serv_addr.sin_port = htons(serv_port);
 
-	serv_addr.sin_family = AF_INET; 
-	serv_addr.sin_port = htons(PORT); 
-	
-	// Convert IPv4 and IPv6 addresses from text to binary form 
-	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
-	{ 
-		printf("\nInvalid address/ Address not supported \n"); 
-		return -1; 
-	} 
+    //Set IP 0.0.0.0/ANY
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
-	{ 
-		printf("\nConnection Failed \n"); 
-		return -1; 
-	} 
-	send(sock , hello , strlen(hello) , 0 ); 
-	printf("Hello message sent\n"); 
-	valread = read( sock , buffer, 1024); 
-	printf("%s\n",buffer ); 
-	return 0; 
-} 
+    //Zero out memory for safety
+    memset((char *)&serv_addr, 0, sizeof(serv_addr));
+    int brv = bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
+    if(brv == -1)
+    { 
+        printf("brv@fail:\t%d\n", brv);
+        perror("Failure binding socket to port: 8080");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("brv:\t%d\n", brv);
+
+
+    return 0;
+}
+

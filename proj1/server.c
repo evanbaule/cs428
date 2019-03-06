@@ -30,13 +30,16 @@ main(int argc, char const ** argv)
 
     //Zero out memory for safety
     memset((char *)&serv_addr, 0, sizeof(serv_addr));
-    int brv = bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr) < 0); //assert(brv != -1 && "Failure binding to port: 8080");
+    int brv = bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
     if(brv == -1)
-    {
+    { 
         printf("brv@fail:\t%d\n", brv);
         perror("Failure binding socket to port: 8080");
         exit(EXIT_FAILURE);
     }
+
+    printf("brv:\t%d\n", brv);
+
 
     return 0;
 }
