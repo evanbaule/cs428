@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 void
 paddr(unsigned char *a)
@@ -32,7 +33,7 @@ main(int argc, char const ** argv)
     int sockoptval = 1;
 
     //syscall create socket TCP/IPv4
-    int serv_sfd = socket(PF_INET, SOCK_STREAM, 0); assert(serv_sfd != -1 && "Socket creation syscall failure.");
+    int serv_sfd = socket(AF_INET, SOCK_STREAM, 0); assert(serv_sfd != -1 && "Socket creation syscall failure.");
     printf("socket_fd:\t%d\n", serv_sfd);
 
     // allow immediate reuse of the port
@@ -41,12 +42,15 @@ main(int argc, char const ** argv)
     //syscall modify socket construction
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
 
-    serv_addr.sin_family = PF_INET;
+    serv_addr.sin_family = AF_INET;
+    //serv_addr.sin_port = serv_port;
     serv_addr.sin_port = htons(serv_port);
     //Set IP 0.0.0.0/ANY
+    printf("server port: %d\n", serv_addr.sin_port);
+
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    printf("IP address is: %d\n", serv_addr.sin_addr.s_addr);
+    printf("IP address is: %s\n", inet_ntoa( serv_addr.sin_addr));
     //printf("port is: %d\n", (int) serv_addr.sin_port);
 
     //Zero out memory for safety
@@ -58,7 +62,7 @@ main(int argc, char const ** argv)
         perror("Failure binding socket to port");
         exit(EXIT_FAILURE);
     }
-    //printf("brv:\t%d\n", brv);
+    printf("brv:\t%d\n", brv);
 
     printf("Listening for connections...\n");
     if(listen(serv_sfd, 3) < 0)
@@ -69,7 +73,8 @@ main(int argc, char const ** argv)
 
     int i = 0;
     while(1)
-    {
+    {   
+        printf("hello?????\n");
         while((rqst = accept(serv_sfd, (struct sockaddr*) &client_addr, &alen)) < 0)
         {
             printf("Connection failed...");
@@ -78,6 +83,11 @@ main(int argc, char const ** argv)
         printf("Listening to socket: %d for cycle %d\n", serv_sfd, i);
         i++;
     }
+
+
+    //close socket
+    shutdown(serv_sfd, SHUT_RDWR);
+
     return 0;
 }
 

@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 
 //Print IP Address formatted
@@ -32,17 +33,17 @@ main(int argc, char ** argv)
     printf("Setting up client...\n");
 
     //syscall create socket TCP/IPv4
-    int client_sfd = socket(PF_INET, SOCK_STREAM, 0); assert(client_sfd != -1 && "Socket creation syscall failure.");
+    int client_sfd = socket(AF_INET, SOCK_STREAM, 0); assert(client_sfd != -1 && "Socket creation syscall failure.");
     //printf("socket_fd:\t%d\n", client_sfd);
 
     //syscall setsockopt to modify socket construction
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
 
     struct sockaddr_in client_addr;
-    client_addr.sin_family = PF_INET;
+    client_addr.sin_family = AF_INET;
 
     //Server will listen to 8080, clients will connect to ip:8080 to send to server
-    client_addr.sin_port = htons(port);
+    client_addr.sin_port = htons(0);
 
     //Set IP 0.0.0.0/ANY
     client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -62,8 +63,9 @@ main(int argc, char ** argv)
     struct sockaddr_in serv_addr;
     /* fill in the server's address and data */
     memset((char*)&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = PF_INET;
-    serv_addr.sin_port = htons(port);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(8080);
+    //serv_addr.sin_port = port; 
 
     hp = gethostbyname(hostname); //why is this a warning?
     //test hp
@@ -79,16 +81,26 @@ main(int argc, char ** argv)
     }
 
     //printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
+    
+    //Copy hostname addr into the server struct
 
-    memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
-    if (connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+
+   // memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
+    //memcpy((void*)&serv_addr.sin_addr, "")
+    serv_addr.sin_addr.s_addr = inet_addr("10.0.2.15");
+
+    printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
+    printf("port:\t%d\n", serv_addr.sin_port);
+    int connect_r = 0;
+    if (connect_r = connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
     {
-	    perror("Failure connecting to server");
+	    printf("rv: %d\n", connect_r);
+        perror("Failure connecting to aaaaaaaaaaaaaaaaaaaaaaaa server");
         exit(EXIT_FAILURE);
     }
     
     //Connection established, begin communication
 
-
+    shutdown(client_sfd, SHUT_RDWR);
     return 0;
 }
