@@ -21,7 +21,7 @@ main(int argc, char const ** argv)
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = PF_INET;
 
-    //Server will listen to 8080, clients will connect to localhost:8080 to send to server
+    //Server will listen to 8080, clients will connect to ip:8080 to send to server
     int serv_port = 8080;
     serv_addr.sin_port = htons(serv_port);
 
@@ -34,11 +34,12 @@ main(int argc, char const ** argv)
     if(brv == -1)
     { 
         printf("brv@fail:\t%d\n", brv);
-        perror("Failure binding socket to port: 8080");
+        perror("Failure binding socket to port");
         exit(EXIT_FAILURE);
     }
+    //printf("brv:\t%d\n", brv);
 
-    printf("brv:\t%d\n", brv);
+
 
 
     return 0;
