@@ -9,23 +9,27 @@
 #include <string.h>
 #include <netdb.h>
 
-int
-main(int argc, char const ** argv)
+
+//Print IP Address formatted
+void
+paddr(unsigned char *a)
 {
-    char* hostname = ""; //default
-    int port;
+        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
+}
+
+int
+main(int argc, char ** argv)
+{
+    char* hostname = "localhost"; //default
+    int port = 0;
     if(argc == 2)
         hostname = argv[1]; //server hostname from execution params
-    else hostname = "localhost";
-
     if(argc == 3)
         port = atoi(argv[2]);
-    else port = 8080;
 
-
-    
     // printf("%d\n", argc);
     // printf("hostname:\t%s\n", hostname);
+    printf("Setting up client...\n");
 
     //syscall create socket TCP/IPv4
     int client_sfd = socket(PF_INET, SOCK_STREAM, 0); assert(client_sfd != -1 && "Socket creation syscall failure.");
@@ -38,8 +42,7 @@ main(int argc, char const ** argv)
     client_addr.sin_family = PF_INET;
 
     //Server will listen to 8080, clients will connect to ip:8080 to send to server
-    int client_port = 8080;
-    client_addr.sin_port = htons(client_port);
+    client_addr.sin_port = htons(port);
 
     //Set IP 0.0.0.0/ANY
     client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -63,10 +66,19 @@ main(int argc, char const ** argv)
     serv_addr.sin_port = htons(port);
 
     hp = gethostbyname(hostname); //why is this a warning?
+    //test hp
+    int i;
+    for (i=0; hp->h_addr_list[i] != 0; i++) 
+    {
+        paddr((unsigned char*) hp->h_addr_list[i]);
+    }
+
     if (!hp) {
         fprintf(stderr, "could not obtain address of %s\n", hostname);
         return 0;
     }
+
+    //printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
 
     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
     if (connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
@@ -74,17 +86,9 @@ main(int argc, char const ** argv)
 	    perror("Failure connecting to server");
         exit(EXIT_FAILURE);
     }
-    //CONNECTION ESTABLISHED
-    /*  
-    once a connection is established:
-        1. the sever will send an ID back to the client that will be used to identify it
-        2. the client will store that ID and preface each message with the ID 
-            so that the server knows where each message came from
-        3. idk how the server differentiates between clients when responding (apparently it doesnt have to)
-
-    */
+    
+    //Connection established, begin communication
 
 
     return 0;
 }
-

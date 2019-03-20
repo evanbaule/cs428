@@ -8,25 +8,46 @@
 #include <errno.h>
 #include <string.h>
 
+void
+paddr(unsigned char *a)
+{
+        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
+}
+
 int
 main(int argc, char const ** argv)
 {
+    int serv_port = 8080;
+    if(argc == 2)
+    {
+        serv_port = atoi(argv[1]);
+    }
+
+    printf("Starting server - listening on port: %d...\n", serv_port);
+
+    struct sockaddr_in serv_addr;
+    struct sockaddr_in client_addr;
+	socklen_t alen;       /* length of address structure */
+    int rqst; //for accept
+    int sockoptval = 1;
+
     //syscall create socket TCP/IPv4
     int serv_sfd = socket(PF_INET, SOCK_STREAM, 0); assert(serv_sfd != -1 && "Socket creation syscall failure.");
     printf("socket_fd:\t%d\n", serv_sfd);
 
-    //syscall setsockopt to modify socket construction
+    // allow immediate reuse of the port
+	setsockopt(serv_sfd, SOL_SOCKET, SO_REUSEADDR, &sockoptval, sizeof(int));
+
+    //syscall modify socket construction
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
 
-    struct sockaddr_in serv_addr;
     serv_addr.sin_family = PF_INET;
-
-    //Server will listen to 8080, clients will connect to ip:8080 to send to server
-    int serv_port = 8080;
     serv_addr.sin_port = htons(serv_port);
-
     //Set IP 0.0.0.0/ANY
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    printf("IP address is: %d\n", serv_addr.sin_addr.s_addr);
+    //printf("port is: %d\n", (int) serv_addr.sin_port);
 
     //Zero out memory for safety
     memset((char *)&serv_addr, 0, sizeof(serv_addr));
@@ -39,9 +60,24 @@ main(int argc, char const ** argv)
     }
     //printf("brv:\t%d\n", brv);
 
+    printf("Listening for connections...\n");
+    if(listen(serv_sfd, 3) < 0)
+    {
+        perror("Failure listening to socket.");
+        exit(EXIT_FAILURE);
+    }
 
-
-
+    int i = 0;
+    while(1)
+    {
+        while((rqst = accept(serv_sfd, (struct sockaddr*) &client_addr, &alen)) < 0)
+        {
+            printf("Connection failed...");
+            break;
+        }
+        printf("Listening to socket: %d for cycle %d\n", serv_sfd, i);
+        i++;
+    }
     return 0;
 }
 
