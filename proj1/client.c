@@ -8,16 +8,8 @@
 #include <errno.h>
 #include <string.h>
 #include <netdb.h>
-#include <arpa/inet.h>
+#include <arpa/inet.h> //only used for printing out IP addresses during development
 #include <ctype.h>
-
-
-//Print IP Address formatted
-void
-paddr(unsigned char *a)
-{
-        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
-}
 
 int
 main(int argc, char ** argv)
@@ -29,8 +21,6 @@ main(int argc, char ** argv)
     if(argc == 3)
         port = atoi(argv[2]);
 
-    // printf("%d\n", argc);
-    // printf("hostname:\t%s\n", hostname);
     printf("Setting up client...\n");
 
     //syscall create socket TCP/IPv4
@@ -41,16 +31,12 @@ main(int argc, char ** argv)
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
    
     struct sockaddr_in client_addr;
-    memset((char *)&client_addr, 0, sizeof(client_addr));
-    
-    client_addr.sin_family = AF_INET;
-    client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    //Server will listen to 8080, clients will connect to ip:8080 to send to server
-    client_addr.sin_port = htons(0);
+    memset((char *)&client_addr, 0, sizeof(client_addr)); //zero out memory for safety
+    client_addr.sin_family = AF_INET; //IPv4
+    client_addr.sin_addr.s_addr = htonl(INADDR_ANY); //client address doesn't really matter
+    client_addr.sin_port = htons(0); //client port doesn't really matter either
 
-    //Set IP 0.0.0.0/ANY
-       //Zero out memory for safety
-   int brv = bind(client_sfd, (struct sockaddr *)&client_addr, sizeof(client_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
+    int brv = bind(client_sfd, (struct sockaddr *)&client_addr, sizeof(client_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
     if(brv == -1)
     { 
         printf("brv@fail:\t%d\n", brv);
@@ -61,46 +47,29 @@ main(int argc, char ** argv)
 
     struct hostent *hp;
     hp = gethostbyname(hostname); //why is this a warning?
-    //test hp
-    int i;
-    for (i=0; hp->h_addr_list[i] != 0; i++) 
-    {
-        paddr((unsigned char*) hp->h_addr_list[i]);
-    }
-
     if (!hp) {
         fprintf(stderr, "could not obtain address of %s\n", hostname);
         return 0;
     }
+
+    //Configure server details
     struct sockaddr_in serv_addr;
-    /* fill in the server's address and data */
     memset((char*)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(21235);
-    //serv_addr.sin_port = port; 
-
-
-
-    //printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
+    serv_addr.sin_port = htons(8080);
     
-    //Copy hostname addr into the server struct
+    //Copy hostname ip addr into the server struct
+    memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
+    // printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
+    // printf("port:\t%d\n", serv_addr.sin_port);
 
-
-     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
-    //memcpy((void*)&serv_addr.sin_addr, "")
-    //serv_addr.sin_addr.s_addr = inet_addr("192.168.1.8");
-
-    printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
-    printf("port:\t%d\n", serv_addr.sin_port);
+    printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
     int connect_r = 0;
     if((connect_r = connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0) 
     {
-	    printf("rv: %d\n", connect_r);
-        perror("Failure connecting to aaaaaaaaaaaaaaaaaaaaaaaa server");
+        perror("Failure connecting to server");
         exit(EXIT_FAILURE);
     }
-
-    printf("connect_r: %d\n", connect_r);
 
     while(1)
     {
@@ -109,6 +78,7 @@ main(int argc, char ** argv)
         char wbuf[256]; //message buffer
         fgets(wbuf, 256, stdin);
 
+        //wbuf2 is only used for checking for exit messages
         char wbuf2[256]; //Make a copy of our message
         memcpy(&wbuf2, wbuf, 256);
         for(int i = 0; wbuf2[i]; i++){
@@ -127,12 +97,19 @@ main(int argc, char ** argv)
             write(client_sfd, wbuf, 256);
         }
 
+        //RECIEVING
         char rbuf[256];
-        read(client_sfd, rbuf, 256);
-        printf("From server: %s", rbuf);
-                
+        read(client_sfd, rbuf, 256); //blocking read, waits for a response
+        if(strcmp(rbuf, "exit\n") == 0)
+        {
+            printf("Server disconnected...\n");
+            break;
+        }
+        else
+            printf("From {Server}: %s", rbuf);
     }
-
+    
+    //Closing socket before shutting down
     shutdown(client_sfd, SHUT_RDWR);
     return 0;
 }

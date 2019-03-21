@@ -7,19 +7,13 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include <arpa/inet.h>
+#include <arpa/inet.h> //only used for printing out IP addresses during development
 #include <ctype.h>
-
-void
-paddr(unsigned char *a)
-{
-        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
-}
 
 int
 main(int argc, char const ** argv)
 {
-    int serv_port = 21235;
+    int serv_port = 8080;
     if(argc == 2)
     {
         serv_port = atoi(argv[1]);
@@ -29,35 +23,32 @@ main(int argc, char const ** argv)
 
     struct sockaddr_in serv_addr;
     struct sockaddr_in client_addr;
-	socklen_t alen;       /* length of address structure */
-    int rqst; //for accept
-    int sockoptval = 1;
-
-    //syscall create socket TCP/IPv4
+	socklen_t alen;//Not sure why the example uses this instead of sizeof
+    int rqst; //file desc for the connected client
+    
+    //syscall create socket & get file descriptor
     int serv_sfd;
     if((serv_sfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("Failure creating socket\n");
         exit(EXIT_FAILURE);
     }
-    printf("Server: socket_fd:\t%d\n", serv_sfd);
+    // printf("Server: socket_fd:\t%d\n", serv_sfd);
 
-    // allow immediate reuse of the port
+    //allow immediate reuse of the port
+    int sockoptval = 1;
 	setsockopt(serv_sfd, SOL_SOCKET, SO_REUSEADDR, &sockoptval, sizeof(int));
 
-    //syscall modify socket construction
-    //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
-
+    //Server configuration
     memset((char*)&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_family = AF_INET; //IPv4
     serv_addr.sin_port = htons(serv_port);
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); //0.0.0.0/ANY:PORT
     
-    //Set IP 0.0.0.0/ANY
     printf("Server port: %d\n", serv_addr.sin_port);
     printf("Server IP address is: %s\n", inet_ntoa( serv_addr.sin_addr));
 
-    
+    //Bind socket 
     if(bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {   
         printf("Failure to bind\n");
@@ -65,13 +56,12 @@ main(int argc, char const ** argv)
     } 
 
     printf("Listening for connections...\n");
-    if(listen(serv_sfd, 3) < 0)
+    if(listen(serv_sfd, 5) < 0) //allow up to 5 clients in queue
     {
         perror("Failure listening to socket.");
         exit(EXIT_FAILURE);
     }
 
-    int i = 0;
     while(1)
     {   
         while((rqst = accept(serv_sfd, (struct sockaddr*) &client_addr, &alen)) < 0)
@@ -91,12 +81,14 @@ main(int argc, char const ** argv)
                 break;
             }
             else
-                printf("From %d: %s", rqst, rbuf);
+                printf("From {%d}: %s", rqst, rbuf);
 
             //SENDING
             printf(">> ");
             char wbuf[256]; //message buffer
             fgets(wbuf, 256, stdin);
+
+            //wbuf2 is only used to check for exit message
             char wbuf2[256]; //Make a copy of our message
             memcpy(&wbuf2, wbuf, 256);
             for(int i = 0; wbuf2[i]; i++){
@@ -117,7 +109,7 @@ main(int argc, char const ** argv)
         }
     }
 
-    //close socket
+    //close socket before exiting process
     shutdown(serv_sfd, SHUT_RDWR);
     return 0;
 }
