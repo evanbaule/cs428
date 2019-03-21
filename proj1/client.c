@@ -9,6 +9,7 @@
 #include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 
 //Print IP Address formatted
@@ -41,7 +42,6 @@ main(int argc, char ** argv)
    
     struct sockaddr_in client_addr;
     memset((char *)&client_addr, 0, sizeof(client_addr));
-    
     
     client_addr.sin_family = AF_INET;
     client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -93,14 +93,45 @@ main(int argc, char ** argv)
     printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
     printf("port:\t%d\n", serv_addr.sin_port);
     int connect_r = 0;
-    if (connect_r = connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+    if((connect_r = connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0) 
     {
 	    printf("rv: %d\n", connect_r);
         perror("Failure connecting to aaaaaaaaaaaaaaaaaaaaaaaa server");
         exit(EXIT_FAILURE);
     }
-    
-    //Connection established, begin communication
+
+    printf("connect_r: %d\n", connect_r);
+
+    while(1)
+    {
+        //SENDING
+        printf(">> ");
+        char wbuf[256]; //message buffer
+        fgets(wbuf, 256, stdin);
+
+        char wbuf2[256]; //Make a copy of our message
+        memcpy(&wbuf2, wbuf, 256);
+        for(int i = 0; wbuf2[i]; i++){
+            wbuf2[i] = tolower(wbuf2[i]); //convert message to lowercase for comparison
+        }
+        //if we enter exit, EXIT, Exit, etc. then we break the connection
+        if(strcmp(wbuf2, "exit\n") == 0) //include the '\n' char because fgets includes it in the buffer
+        {
+            write(client_sfd, wbuf2, 256);
+            printf("Closing connection...\n");
+            break;
+        }
+        else
+        {
+            //printf("Sending msg: %s\n", wbuf);
+            write(client_sfd, wbuf, 256);
+        }
+
+        char rbuf[256];
+        read(client_sfd, rbuf, 256);
+        printf("From server: %s", rbuf);
+                
+    }
 
     shutdown(client_sfd, SHUT_RDWR);
     return 0;

@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 void
 paddr(unsigned char *a)
@@ -73,21 +74,51 @@ main(int argc, char const ** argv)
     int i = 0;
     while(1)
     {   
-        printf("hello?????\n");
         while((rqst = accept(serv_sfd, (struct sockaddr*) &client_addr, &alen)) < 0)
         {
             printf("Connection failed...");
             break;
         }
-        printf("Listening to socket: %d for cycle %d\n", serv_sfd, i);
-        i++;
+        printf("Connection established with user: %d\n", rqst);
+        while(1)
+        {
+            //RECIEVING
+            char rbuf[256];
+            read(rqst, rbuf, 256);
+            if(strcmp(rbuf, "exit\n") == 0)
+            {
+                printf("User %d disconnected...\n", rqst);
+                break;
+            }
+            else
+                printf("From %d: %s", rqst, rbuf);
+
+            //SENDING
+            printf(">> ");
+            char wbuf[256]; //message buffer
+            fgets(wbuf, 256, stdin);
+            char wbuf2[256]; //Make a copy of our message
+            memcpy(&wbuf2, wbuf, 256);
+            for(int i = 0; wbuf2[i]; i++){
+                wbuf2[i] = tolower(wbuf2[i]); //convert message to lowercase for comparison
+            }
+            //if we enter exit, EXIT, Exit, etc. then we break the connection
+            if(strcmp(wbuf2, "exit\n") == 0) //include the '\n' char because fgets includes it in the buffer
+            {
+                write(rqst, wbuf2, 256);
+                printf("Closing connection...\n");
+                break;
+            }
+            else
+            {
+                //printf("Sending msg: %s\n", wbuf);
+                write(rqst, wbuf, 256);
+            }
+        }
     }
-
-
 
     //close socket
     shutdown(serv_sfd, SHUT_RDWR);
-
     return 0;
 }
 
