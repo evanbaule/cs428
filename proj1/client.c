@@ -38,19 +38,19 @@ main(int argc, char ** argv)
 
     //syscall setsockopt to modify socket construction
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
-
+   
     struct sockaddr_in client_addr;
+    memset((char *)&client_addr, 0, sizeof(client_addr));
+    
+    
     client_addr.sin_family = AF_INET;
-
+    client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     //Server will listen to 8080, clients will connect to ip:8080 to send to server
     client_addr.sin_port = htons(0);
 
     //Set IP 0.0.0.0/ANY
-    client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    //Zero out memory for safety
-    memset((char *)&client_addr, 0, sizeof(client_addr));
-    int brv = bind(client_sfd, (struct sockaddr *)&client_addr, sizeof(client_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
+       //Zero out memory for safety
+   int brv = bind(client_sfd, (struct sockaddr *)&client_addr, sizeof(client_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
     if(brv == -1)
     { 
         printf("brv@fail:\t%d\n", brv);
@@ -60,13 +60,6 @@ main(int argc, char ** argv)
     //printf("brv:\t%d\n", brv);
 
     struct hostent *hp;
-    struct sockaddr_in serv_addr;
-    /* fill in the server's address and data */
-    memset((char*)&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(8080);
-    //serv_addr.sin_port = port; 
-
     hp = gethostbyname(hostname); //why is this a warning?
     //test hp
     int i;
@@ -79,15 +72,23 @@ main(int argc, char ** argv)
         fprintf(stderr, "could not obtain address of %s\n", hostname);
         return 0;
     }
+    struct sockaddr_in serv_addr;
+    /* fill in the server's address and data */
+    memset((char*)&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(21235);
+    //serv_addr.sin_port = port; 
+
+
 
     //printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
     
     //Copy hostname addr into the server struct
 
 
-   // memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
+     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
     //memcpy((void*)&serv_addr.sin_addr, "")
-    serv_addr.sin_addr.s_addr = inet_addr("10.0.2.15");
+    //serv_addr.sin_addr.s_addr = inet_addr("192.168.1.8");
 
     printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
     printf("port:\t%d\n", serv_addr.sin_port);

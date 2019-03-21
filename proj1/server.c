@@ -18,7 +18,7 @@ paddr(unsigned char *a)
 int
 main(int argc, char const ** argv)
 {
-    int serv_port = 8080;
+    int serv_port = 21235;
     if(argc == 2)
     {
         serv_port = atoi(argv[1]);
@@ -33,8 +33,13 @@ main(int argc, char const ** argv)
     int sockoptval = 1;
 
     //syscall create socket TCP/IPv4
-    int serv_sfd = socket(AF_INET, SOCK_STREAM, 0); assert(serv_sfd != -1 && "Socket creation syscall failure.");
-    printf("socket_fd:\t%d\n", serv_sfd);
+    int serv_sfd;
+    if((serv_sfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("Failure creating socket\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Server: socket_fd:\t%d\n", serv_sfd);
 
     // allow immediate reuse of the port
 	setsockopt(serv_sfd, SOL_SOCKET, SO_REUSEADDR, &sockoptval, sizeof(int));
@@ -42,27 +47,21 @@ main(int argc, char const ** argv)
     //syscall modify socket construction
     //int sso_rv = setsockopt(ss_fd, ); assert(sso_rv != -1 && "Setsockopt syscall failure to modify socket properties.");
 
+    memset((char*)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    //serv_addr.sin_port = serv_port;
     serv_addr.sin_port = htons(serv_port);
-    //Set IP 0.0.0.0/ANY
-    printf("server port: %d\n", serv_addr.sin_port);
-
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+    //Set IP 0.0.0.0/ANY
+    printf("Server port: %d\n", serv_addr.sin_port);
+    printf("Server IP address is: %s\n", inet_ntoa( serv_addr.sin_addr));
 
-    printf("IP address is: %s\n", inet_ntoa( serv_addr.sin_addr));
-    //printf("port is: %d\n", (int) serv_addr.sin_port);
-
-    //Zero out memory for safety
-    memset((char *)&serv_addr, 0, sizeof(serv_addr));
-    int brv = bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)); //assert(brv != -1 && "Failure binding to port: 8080");
-    if(brv == -1)
-    { 
-        printf("brv@fail:\t%d\n", brv);
-        perror("Failure binding socket to port");
+    
+    if(bind(serv_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {   
+        printf("Failure to bind\n");
         exit(EXIT_FAILURE);
-    }
-    printf("brv:\t%d\n", brv);
+    } 
 
     printf("Listening for connections...\n");
     if(listen(serv_sfd, 3) < 0)
@@ -83,6 +82,7 @@ main(int argc, char const ** argv)
         printf("Listening to socket: %d for cycle %d\n", serv_sfd, i);
         i++;
     }
+
 
 
     //close socket
