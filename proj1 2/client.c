@@ -63,8 +63,6 @@ main(int argc, char ** argv)
     // printf("ip post change:\t%s\n", inet_ntoa(serv_addr.sin_addr));
     // printf("port:\t%d\n", serv_addr.sin_port);
 
-    //serv_addr.sin_addr.s_addr = inet_addr(hostname);
-
     printf("Attempting to establish connection to: %s:%d...\n", hostname, port);
     int connect_r = 0;
     if((connect_r = connect(client_sfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0) 
@@ -110,7 +108,7 @@ main(int argc, char ** argv)
         else
             printf("From {Server}: %s", rbuf);
     }
-
+    
     //Closing socket before shutting down
     shutdown(client_sfd, SHUT_RDWR);
     return 0;
