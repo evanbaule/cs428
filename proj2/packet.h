@@ -2,7 +2,7 @@
 
 typedef struct packet
 {
-
+    short op_code; //00
 } __attribute__((packed)) packet;
 
 typedef struct packet_meta
@@ -23,5 +23,10 @@ typedef struct packet_datagram
 typedef struct packet_ack
 {
     short op_code; //03
-    char file_name[32]; //might as well use the space
+    int packet_num;
 } __attribute__((packed)) packet_ack;
+
+typedef struct packet_tail
+{
+    short op_code; //04
+} __attribute((packed)) packet_tail;
