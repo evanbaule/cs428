@@ -66,13 +66,10 @@ main(int argc, char const ** argv)
         exit(EXIT_FAILURE);
     }
 
-
-
     char* file_name = malloc(32*sizeof(char)); //idk if this is necessary i manage memory so poorly
     int file_size;
     int num_packets;
     char* file_buffer;
-
 
     while(1)
     {
@@ -95,7 +92,7 @@ main(int argc, char const ** argv)
             printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
             switch (pckt->op_code)
             {
-                case 01:
+                case 01: //Metadata Packet
                     printf("Recieved metadata packet... processing...\n");
                     packet_meta* metadata = malloc(PACKET_SIZE);
                     metadata = (packet_meta*) pckt;
@@ -111,15 +108,29 @@ main(int argc, char const ** argv)
                     file_size = metadata->file_size;
                     num_packets = metadata->num_packets;
 
+                    packet_ack* ack = malloc(PACKET_SIZE);
+                    ack->op_code = 01;
+                    ack->packet_num = 0;
+                    char* ack_buff = malloc(PACKET_SIZE);
+                    ack_buff = (char*) ack;
+                    printf("Acknowledging metadata packet #: %d", ack->packet_num);
+                    write(rqst, ack_buff, PACKET_SIZE);
                     break;
-                case 02:
+                case 02: //Datagram Packet
                     /* code */
+                    printf("Received datagram packet... processing...\n");
+                    printf("----------------------\n");
+                    printf("Datagram summary:\n");
+                    printf("\t- OP: %d\n", pckt->op_code);
+                    printf("\t- Packet #: %d\n", pckt->packet_num);
+                    printf("\t- Data:\n\t\t%s\n", pckt->data);
+                    printf("----------------------\n");
                     break;
-                case 03:
+                case 03: //ACK Packet
                     /* code */
                     printf("ERROR: SERVER RECEIVED AN ACK FOR SOME REASON\n");
                     break;
-                case 04:
+                case 04: //Tail packet
                     /* code */
                     brk = 0;
                     break;
