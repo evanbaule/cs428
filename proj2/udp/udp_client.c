@@ -50,11 +50,13 @@ int main(int argc, char **argv)
 
     char* msg = "hello";
     //write msg to socket (packets)
-    if(sendto(sfd, msg, strlen(msg), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
+    int send_size = 0;
+    if((send_size = sendto(sfd, msg, strlen(msg), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
         perror("Failed sending msg to host");
         exit(EXIT_FAILURE);
     }
 
+    printf("We sent this many bytes: %d\n", send_size);
     return 0;
 }
