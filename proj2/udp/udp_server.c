@@ -40,10 +40,13 @@ int main(int argc, char **argv)
 
     struct sockaddr_in remaddr;
     socklen_t re_len = sizeof(remaddr);
-
+    
     int recvlen = 0;
     char buff[2048];
-    for (;;) {
+
+    int brk = 1;
+    while(brk)
+    {
         printf("waiting on port %d\n", serv_port);
         recvlen = recvfrom(sfd, buff, 2048, 0, (struct sockaddr *)&remaddr, &re_len);
         printf("received %d bytes\n", recvlen);
