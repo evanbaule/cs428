@@ -48,11 +48,16 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    char* msg = "hello";
+    char *msg = malloc(32*sizeof(char));
+    msg = file_name;
+    socklen_t serv_addr_len = sizeof(serv_addr);
+    printf("Sending msg: %s\n", msg);
+
     //write msg to socket (packets)
     int send_size = 0;
-    if((send_size = sendto(sfd, msg, strlen(msg), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+    if((send_size = sendto(sfd, msg, strlen(msg), 0, (struct sockaddr*)&serv_addr, serv_addr_len)) < 0)
     {
+        printf("Return value from sendto():\t%d\n", send_size);
         perror("Failed sending msg to host");
         exit(EXIT_FAILURE);
     }
