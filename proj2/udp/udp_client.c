@@ -63,5 +63,8 @@ int main(int argc, char **argv)
     }
 
     printf("We sent this many bytes: %d\n", send_size);
+
+    
+    close(sfd);
     return 0;
 }

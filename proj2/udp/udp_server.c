@@ -15,16 +15,6 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    printf("Setting up client...\n");
-
-    //Open the UDP socket
-    int sfd;
-    if((sfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        perror("Failure creating socket\n");
-        exit(EXIT_FAILURE);
-    }
-
     //Server configuration
     struct sockaddr_in serv_addr;
     memset((char*)&serv_addr, 0, sizeof(serv_addr));
@@ -32,7 +22,7 @@ int main(int argc, char **argv)
     serv_addr.sin_port = htons(serv_port);
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if(bind(sfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
+    if(bind(server_sfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
     {
         perror("Failure binding socket.\n");
         exit(EXIT_FAILURE);
@@ -48,7 +38,7 @@ int main(int argc, char **argv)
     while(brk)
     {
         printf("waiting on port %d\n", serv_port);
-        recvlen = recvfrom(sfd, buff, 2048, 0, (struct sockaddr *)&remaddr, &re_len);
+        recvlen = recvfrom(server_sfd, buff, sizeof(buff), 0, (struct sockaddr *)&remaddr, &re_len);
         printf("received %d bytes\n", recvlen);
         if (recvlen > 0) {
                 buff[recvlen] = 0;
@@ -56,5 +46,6 @@ int main(int argc, char **argv)
         }
     }
 
+    close(server_sfd);
     return 0;
 }
