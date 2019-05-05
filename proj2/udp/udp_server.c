@@ -28,27 +28,39 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-
-
     struct sockaddr_in remaddr;
     socklen_t addrlen = sizeof(remaddr);
     
     int num_read = 0;
     char* packet_buffer = malloc(PACKET_SIZE);
+    memset(packet_buffer, 0, PACKET_SIZE);
     packet_meta* metadata = malloc(PACKET_SIZE);
 
     printf("Waiting on port %d\n", serv_port);
     int brk = 1;
     while(brk)
     {
-        
-        num_read = recvfrom(server_sfd, (char*)&metadata, sizeof(metadata), 0, (struct sockaddr *)&remaddr, &addrlen);
+        num_read = recvfrom(server_sfd, (char*)metadata, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
         printf("Bytes Read:\t%d\n", num_read);
+
+        metadata->op_code = ntohs(metadata->op_code);
+        metadata->file_size = ntohl(metadata->file_size);
+        metadata->num_packets = ntohl(metadata->num_packets);
+
+        printf("----------------------\n");
+        printf("Metadata summary:\n");
+        printf("\t- OP: %d\n", metadata->op_code);
+        printf("\t- File Name: %s\n", metadata->file_name);
+        printf("\t- File Size: %d\n", metadata->file_size);
+        printf("\t- # packets: %d\n", metadata->num_packets);
+        printf("----------------------\n");
+
+
         
-        packet_datagram* pckt = malloc(PACKET_SIZE);
-        pckt = (packet_datagram*) packet_buffer;
-        printf("Serialized packet: %s\n", packet_buffer);
-        printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
+        // packet_datagram* pckt = malloc(PACKET_SIZE);
+        // pckt = (packet_datagram*) packet_buffer;
+        // printf("Serialized packet: %s\n", packet_buffer);
+        // printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
         brk = 0;
     }
 

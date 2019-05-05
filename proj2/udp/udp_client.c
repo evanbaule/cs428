@@ -112,9 +112,11 @@ int main(int argc, char **argv)
     printf("num_packets:\t%d\n", num_packets);
     char* packets[num_packets];
     
-    packet_meta *metadata = malloc(PACKET_SIZE);
+    packet_meta* metadata = malloc(PACKET_SIZE);
+    memset( metadata->empty, 0, sizeof(metadata->empty) );
+
     metadata->op_code = 01;
-    memcpy(metadata->file_name, &file_name, 32);
+    memcpy(metadata->file_name, file_name, 32);
     metadata->file_size = file_size;
     metadata->num_packets = num_packets;
     printf("----------------------\n");
@@ -125,13 +127,17 @@ int main(int argc, char **argv)
     printf("\t- # packets: %d\n", metadata->num_packets);
     printf("----------------------\n");
 
+    metadata->op_code = htons(metadata->op_code);
+    metadata->file_size = htonl(metadata->file_size);
+    metadata->num_packets = htonl(metadata->num_packets);
+
     char* meta_buff = malloc(PACKET_SIZE);
     meta_buff = (char*) metadata;
     printf("Dispatching metadata, waiting for response...\n");
 
     printf("Sending data: %s\n", meta_buff);
     int num_sent = 0;
-    if((num_sent = sendto(sfd, (char*)&metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+    if((num_sent = sendto(sfd, (char*)metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
         printf("Return value from sendto():\t%d\n", num_sent);
         perror("Failed sending metadata to host");

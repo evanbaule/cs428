@@ -17,8 +17,18 @@
 
 // typedef struct packet
 // {
-//     short op_code; //00
+//     short op_code;
+//     char data[1498];
 // } __attribute__((packed)) packet;
+
+// typedef struct meta_header
+// {
+//     short op_code;
+//     char file_name[32]; //max length set to ensure fixed size, tells name of inbound file
+//     int file_size;  //tells size of inbound file
+//     int num_packets; // total # of packets for the entire file (might as well send it with all this space)
+    
+// } __attribute__ ((packed)) meta_header;
 
 typedef struct packet_meta
 {
@@ -26,6 +36,7 @@ typedef struct packet_meta
     char file_name[32]; //max length set to ensure fixed size, tells name of inbound file
     int file_size;  //tells size of inbound file
     int num_packets; // total # of packets for the entire file (might as well send it with all this space)
+    char empty[1456];
 } __attribute__ ((packed)) packet_meta;
 
 typedef struct packet_datagram
@@ -39,11 +50,13 @@ typedef struct packet_ack
 {
     short op_code; //03
     int packet_num;
+    char empty[1494];
 } __attribute__((packed)) packet_ack;
 
 typedef struct packet_tail
 {
     short op_code; //04
+    char empty[1498];
 } __attribute((packed)) packet_tail;
 
 #endif // !PACKET_H
