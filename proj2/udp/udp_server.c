@@ -28,32 +28,99 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    int num_read = 0;
     struct sockaddr_in remaddr;
     socklen_t addrlen = sizeof(remaddr);
     
-    int num_read = 0;
-    char* packet_buffer = malloc(PACKET_SIZE);
-    memset(packet_buffer, 0, PACKET_SIZE);
-    packet_meta* metadata = malloc(PACKET_SIZE);
+    char file_name[32];
+    int file_size = 0;
+    int num_packets = 0;
+    char* file_buffer;
+
+    packet* pckt = malloc(PACKET_SIZE); //packet buffer
 
     printf("Waiting on port %d\n", serv_port);
     int brk = 1;
     while(brk)
     {
-        num_read = recvfrom(server_sfd, (char*)metadata, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
+        num_read = recvfrom(server_sfd, (char*)pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
         printf("Bytes Read:\t%d\n", num_read);
+        pckt->op_code = ntohs(pckt->op_code);
+        printf("Recieved packet with OP code: %d\n", pckt->op_code);
 
-        metadata->op_code = ntohs(metadata->op_code);
-        metadata->file_size = ntohl(metadata->file_size);
-        metadata->num_packets = ntohl(metadata->num_packets);
+        switch (pckt->op_code)
+        {
+            case 01: //Metadata Packet
+                printf("Recieved metadata packet... processing...\n");
+                packet_meta* metadata = malloc(PACKET_SIZE);
+                metadata = (packet_meta*) pckt;
 
-        printf("----------------------\n");
-        printf("Metadata summary:\n");
-        printf("\t- OP: %d\n", metadata->op_code);
-        printf("\t- File Name: %s\n", metadata->file_name);
-        printf("\t- File Size: %d\n", metadata->file_size);
-        printf("\t- # packets: %d\n", metadata->num_packets);
-        printf("----------------------\n");
+                //convert to correct endian
+                metadata->file_size = ntohl(metadata->file_size);
+                metadata->num_packets = ntohl(metadata->num_packets);
+
+                printf("----------------------\n");
+                printf("Metadata summary:\n");
+                printf("\t- OP: %d\n", metadata->op_code);
+                printf("\t- File Name: %s\n", metadata->file_name);
+                printf("\t- File Size: %d\n", metadata->file_size);
+                printf("\t- # packets: %d\n", metadata->num_packets);
+                printf("----------------------\n");
+
+                memcpy(file_name, metadata->file_name, 32);
+                file_size = metadata->file_size;
+                file_buffer = malloc(file_size);
+
+                num_packets = metadata->num_packets;
+
+                // packet_ack* ack = malloc(PACKET_SIZE);
+                // ack->op_code = 01;
+                // ack->packet_num = 0;
+                // char* ack_buff = malloc(PACKET_SIZE);
+                // ack_buff = (char*) ack;
+                // printf("Acknowledging metadata packet #: %d", ack->packet_num);
+                // write(rqst, ack_buff, PACKET_SIZE);
+                break;
+            case 02: //Datagram Packet
+                /* code */
+                printf("Received datagram packet... processing...\n");
+                packet_datagram *dg = malloc(PACKET_SIZE);
+
+                dg = (packet_datagram*) pckt;
+
+                //convert endianness
+                dg->packet_num = ntohl(dg->packet_num);
+
+                printf("----------------------\n");
+                printf("Datagram summary:\n");
+                printf("\t- OP: %d\n", dg->op_code);
+                printf("\t- Packet #: %d\n", dg->packet_num);
+                printf("\t- Data:\n\t\t%s\n", dg->data);
+                printf("----------------------\n");
+                break;
+            case 03: //ACK Packet
+                /* code */
+                printf("ERROR: SERVER RECEIVED AN ACK FOR SOME REASON\n");
+                break;
+            case 04: //Tail packet
+                /* code */
+                brk = 0;
+                break;
+            default:
+                fprintf(stderr, "We should never have gotten to here\n");
+                brk = 0;
+                break;
+        }
+
+
+
+        // printf("----------------------\n");
+        // printf("Metadata summary:\n");
+        // printf("\t- OP: %d\n", metadata->op_code);
+        // printf("\t- File Name: %s\n", metadata->file_name);
+        // printf("\t- File Size: %d\n", metadata->file_size);
+        // printf("\t- # packets: %d\n", metadata->num_packets);
+        // printf("----------------------\n");
 
 
         
@@ -61,7 +128,6 @@ int main(int argc, char **argv)
         // pckt = (packet_datagram*) packet_buffer;
         // printf("Serialized packet: %s\n", packet_buffer);
         // printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
-        brk = 0;
     }
 
     close(server_sfd);

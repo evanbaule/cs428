@@ -111,7 +111,7 @@ main(int argc, char const ** argv)
             packet_datagram* pckt = malloc(PACKET_SIZE);
             pckt = (packet_datagram*) packet_buffer;
             printf("Serialized packet: %s\n", packet_buffer);
-            printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
+            
             switch (pckt->op_code)
             {
                 case 01: //Metadata Packet

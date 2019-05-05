@@ -131,11 +131,11 @@ int main(int argc, char **argv)
     metadata->file_size = htonl(metadata->file_size);
     metadata->num_packets = htonl(metadata->num_packets);
 
-    char* meta_buff = malloc(PACKET_SIZE);
-    meta_buff = (char*) metadata;
+    // char* meta_buff = malloc(PACKET_SIZE);
+    // meta_buff = (char*) metadata;
     printf("Dispatching metadata, waiting for response...\n");
 
-    printf("Sending data: %s\n", meta_buff);
+    //printf("Sending data: %s\n", meta_buff);
     int num_sent = 0;
     if((num_sent = sendto(sfd, (char*)metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
@@ -145,8 +145,8 @@ int main(int argc, char **argv)
     }
     printf("Sizeof data sent: %d\n", num_sent);
 
-    struct sockaddr_in remaddr;
-    socklen_t addrlen = sizeof(remaddr);
+    // struct sockaddr_in remaddr;
+    // socklen_t addrlen = sizeof(remaddr);
 
     // char* ack_buff = malloc(PACKET_SIZE);
     // int recvlen = recvfrom(sfd, ack_buff, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
@@ -158,7 +158,99 @@ int main(int argc, char **argv)
     // printf("\t- Packet #: %d\n", ack->packet_num);
     // printf("----------------------\n");
 
-    printf("We sent this many bytes: %d\n", num_sent);
+    int i;
+    for(i = 0; i < num_packets; i++)
+    {
+        printf("PROCESSING PACKET: %d\n", i);
+        char buff[1494];
+        memcpy(&buff, &file_buffer[i*1494], 1494);
+        //printf("packet #: %d\n\t%s\n", i, buff);
+        printf("Packetizing data...\n");
+        packet_datagram* dg = malloc(PACKET_SIZE);
+        dg->op_code = 02;
+        dg->packet_num = i+1;
+        memcpy(dg->data, &file_buffer[i*PACKET_SIZE], PACKET_SIZE);
+
+        printf("----------------------\n");
+        printf("Datagram summary:\n");
+        printf("\t- OP: %d\n", dg->op_code);
+        printf("\t- Packet #: %d\n", dg->packet_num);
+        printf("\t- Data:\n\t\t%s\n", dg->data);
+        printf("----------------------\n");
+        printf("Dispatching datagram...\n");
+
+        dg->op_code = htons(dg->op_code);
+        dg->packet_num = htonl(dg->packet_num);
+
+        if((num_sent = sendto(sfd, (char*)dg, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+        {
+            printf("Return value from sendto():\t%d\n", num_sent);
+            perror("Failed sending datagram to host");
+            exit(EXIT_FAILURE);
+        }
+        printf("Sizeof data sent: %d\n", num_sent);
+
+        // read(client_sfd, ack_buff, PACKET_SIZE);
+        // printf("Datagram acknowledged...\n");
+        // ack = (packet_ack*) ack_buff;
+        // printf("----------------------\n");
+        // printf("ACK summary:\n");
+        // printf("\t- OP: %d\n", ack->op_code);
+        // printf("\t- Packet #: %d\n", ack->packet_num);
+        // printf("----------------------\n");
+
+        // if(ack->op_code != 3)
+        // {
+        //     fprintf(stderr, "ACK Packet %d had the wrong OP code: %d\n", i+1, ack->op_code);
+        // }
+        // if(ack->packet_num != i+1)
+        // {
+        //     fprintf(stderr, "ACK Packet # %d had the wrong packet number: %d\n", i+1, ack->packet_num);
+        // }
+    }
+
+    packet_tail* tail = malloc(PACKET_SIZE);
+    tail->op_code = 04;
+    memset( tail->empty, 0, sizeof(tail->empty) );
+    printf("----------------------\n");
+    printf("Tail summary:\n");
+    printf("\t- OP: %d\n", tail->op_code);
+    printf("----------------------\n");
+    printf("Dispatching EOF tail packet, waiting for response\n");
+
+    tail->op_code = htons(tail->op_code);
+
+    if((num_sent = sendto(sfd, (char*)tail, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+    {
+        printf("Return value from sendto():\t%d\n", num_sent);
+        perror("Failed sending metadata to host");
+        exit(EXIT_FAILURE);
+    }
+    //printf("Sizeof data sent: %d\n", num_sent);
+
+    // //Maybe make this a function since we use it twice
+    // read(client_sfd, ack_buff, PACKET_SIZE);
+    // printf("Tail packet acknowledged:\n");
+    // ack = (packet_ack*) ack_buff;
+    // printf("----------------------\n");
+    // printf("ACK summary:\n");
+    // printf("\t- OP: %d\n", ack->op_code);
+    // printf("\t- Packet #: %d\n", ack->packet_num);
+    // printf("----------------------\n");
+
+    // if(ack->op_code != 3)
+    // {
+    //     fprintf(stderr, "Tail ACK Packet had the wrong OP code: %d\n", ack->op_code);
+    // }
+    // if(ack->packet_num != i)
+    // {
+    //     fprintf(stderr, "Tail ACK Packet had the wrong packet number: %d\n", ack->packet_num);
+    // }
+
+    //printf("Hopefully we made it here without anything breaking...\n");
+
+
+    printf("We sent this many packets: %d\n", i);
     close(sfd);
     return 0;
 }

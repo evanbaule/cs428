@@ -15,11 +15,11 @@
 #define DEFAULT_HOST "localhost"
 #define DEFAULT_PORT 8080
 
-// typedef struct packet
-// {
-//     short op_code;
-//     char data[1498];
-// } __attribute__((packed)) packet;
+typedef struct packet
+{
+    short op_code;
+    char data[1498];
+} __attribute__((packed)) packet;
 
 // typedef struct meta_header
 // {
