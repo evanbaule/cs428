@@ -79,7 +79,6 @@ int main(int argc, char **argv)
         perror("Failure getting IP from given hostname.\n");
         exit(EXIT_FAILURE);
     }
-    //Copy from hp result into serv_addr
     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 
     //Print IP Address of Server
