@@ -8,8 +8,3 @@ comp_all: udp_server.c udp_client.c
 
 clean:
 	rm -f *.out *.o client server 
-
-run: all
-	./prog4swap
-
-	

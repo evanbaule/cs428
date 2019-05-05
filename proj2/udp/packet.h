@@ -11,7 +11,7 @@
 #include <string.h>
 #include <netdb.h>
 
-#define PACKET_SIZE 1500;
+#define PACKET_SIZE 1500
 #define DEFAULT_HOST "localhost"
 #define DEFAULT_PORT 8080
 

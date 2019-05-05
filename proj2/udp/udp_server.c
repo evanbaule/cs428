@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    int serv_port = 8080;
+    int serv_port = DEFAULT_PORT;
     if(argc == 2)
     {
         serv_port = atoi(argv[1]);
@@ -29,21 +29,25 @@ int main(int argc, char **argv)
     }
 
     struct sockaddr_in remaddr;
-    socklen_t re_len = sizeof(remaddr);
+    socklen_t addrlen = sizeof(remaddr);
     
-    int recvlen = 0;
-    char buff[2048];
+    int num_read = 0;
+    char* packet_buffer = malloc(PACKET_SIZE);
+    packet_meta* metadata = malloc(PACKET_SIZE);
 
+    printf("Waiting on port %d\n", serv_port);
     int brk = 1;
     while(brk)
     {
-        printf("waiting on port %d\n", serv_port);
-        recvlen = recvfrom(server_sfd, buff, sizeof(buff), 0, (struct sockaddr *)&remaddr, &re_len);
-        printf("received %d bytes\n", recvlen);
-        if (recvlen > 0) {
-                buff[recvlen] = 0;
-                printf("received message: \"%s\"\n", buff);
-        }
+        
+        num_read = recvfrom(server_sfd, (char*)&metadata, sizeof(metadata), 0, (struct sockaddr *)&remaddr, &addrlen);
+        printf("Bytes Read:\t%d\n", num_read);
+        
+        packet_datagram* pckt = malloc(PACKET_SIZE);
+        pckt = (packet_datagram*) packet_buffer;
+        printf("Serialized packet: %s\n", packet_buffer);
+        printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
+        brk = 0;
     }
 
     close(server_sfd);
