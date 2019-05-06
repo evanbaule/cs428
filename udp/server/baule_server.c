@@ -118,11 +118,9 @@ int main(int argc, char **argv)
                 printf("Datagram summary:\n");
                 printf("\t- OP: %d\n", dg->op_code);
                 printf("\t- Packet #: %d\n", dg->packet_num);
-                printf("\t- Data:\n\t\t%s\n", dg->data);
+                //printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
 				
-
-	
                 //append to file
                 if(file_size_copy < 1494)
                 {

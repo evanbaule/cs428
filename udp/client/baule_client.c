@@ -171,13 +171,13 @@ int main(int argc, char **argv)
         packet_datagram* dg = malloc(PACKET_SIZE);
         dg->op_code = 02;
         dg->packet_num = i+1;
-        memcpy(dg->data, &file_buffer[i*PACKET_SIZE], PACKET_SIZE);
+        memcpy(dg->data, &file_buffer[i*1494], 1494);
 
         printf("----------------------\n");
         printf("Datagram summary:\n");
         printf("\t- OP: %d\n", dg->op_code);
         printf("\t- Packet #: %d\n", dg->packet_num);
-        printf("\t- Data:\n\t\t%s\n", dg->data);
+        //printf("\t- Data:\n\t\t%s\n", dg->data);
         printf("----------------------\n");
         printf("Dispatching datagram...\n");
 
