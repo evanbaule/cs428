@@ -1,11 +1,5 @@
 #include "../packet.h"
 
-void //stole this froms S.O.just to print out the IP to check
-paddr(unsigned char *a)
-{
-        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
-}
-
 int main(int argc, char **argv)
 {
 
@@ -15,10 +9,7 @@ int main(int argc, char **argv)
     -------------------------------------------------
     */
     char* file_name = "";
-    if(argc == 2)
-        file_name = argv[1];
-    else
-        fprintf(stderr, "A file name argument is required.\n");
+    file_name = argv[1];
     
     char* hostname = "localhost"; //default
     int port = DEFAULT_PORT;
@@ -27,6 +18,8 @@ int main(int argc, char **argv)
     if(argc == 4)
         port = atoi(argv[3]); //server port from params
 
+	printf("host: %s\n", hostname);
+	
     /*
     -------------------------------------------------
     Configuring Client Side Addressing
@@ -50,7 +43,7 @@ int main(int argc, char **argv)
         perror("Failure creating socket\n");
         exit(EXIT_FAILURE);
     }
-
+	
     /*
     -------------------------------------------------
     Binding to socket
@@ -81,11 +74,6 @@ int main(int argc, char **argv)
     }
     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 
-    //Print IP Address of Server
-    for (int i=0; hp->h_addr_list[i] != 0; i++)
-    {
-        paddr((unsigned char*) hp->h_addr_list[i]);
-    }
 
     /*
     -------------------------------------------------
@@ -93,6 +81,8 @@ int main(int argc, char **argv)
     -------------------------------------------------
     */
     FILE *in_file = fopen(file_name, "r");
+	if(!in_file)
+		exit(EXIT_FAILURE);
     fseek(in_file, 0, SEEK_END); //seek to end of the file so we know how big it is
     int file_size = ftell(in_file);
 
