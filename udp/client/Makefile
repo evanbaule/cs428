@@ -9,4 +9,4 @@ clean:
 	rm -f *.out *.o client
 
 run: all
-	./client samurai.txt
+	./client bees.txt
