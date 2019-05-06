@@ -2,6 +2,11 @@
 
 int main(int argc, char **argv)
 {
+    /*
+    -------------------------------------------------
+    Parse Command Line Arguments
+    -------------------------------------------------
+    */
     int serv_port = DEFAULT_PORT;
     if(argc == 2)
     {
@@ -15,7 +20,11 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    //Server configuration
+    /*
+    -------------------------------------------------
+    Configure Server Details
+    -------------------------------------------------
+    */
     struct sockaddr_in serv_addr;
     memset((char*)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET; //IPv4
@@ -28,6 +37,11 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    /*
+    -------------------------------------------------
+    Initialize File Details
+    -------------------------------------------------
+    */
     int num_read = 0;
     struct sockaddr_in remaddr;
     socklen_t addrlen = sizeof(remaddr);
@@ -47,6 +61,11 @@ int main(int argc, char **argv)
     {
         int ack_p_num = -1; //default to tail packet
 
+        /*
+        -------------------------------------------------
+        Read the next packet and route based on op_code
+        -------------------------------------------------
+        */
         num_read = recvfrom(server_sfd, pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
         pckt->op_code = ntohs(pckt->op_code);
 
@@ -127,6 +146,11 @@ int main(int argc, char **argv)
                 break;
         }
 
+        /*
+        -------------------------------------------------
+        Acknowledge The Packet We Just Got
+        -------------------------------------------------
+        */
         packet_ack *ack = malloc(PACKET_SIZE);
         ack->op_code = htons(3);
         ack->packet_num = htonl(ack_p_num);
@@ -134,6 +158,12 @@ int main(int argc, char **argv)
     }
 
 	printf("Finished recieving: %s, total %d bytes written.\n", file_name, total_written);
+
+    /*
+    -------------------------------------------------
+    Shutdown
+    -------------------------------------------------
+    */
     fclose(out_file_ptr);
     close(server_sfd);
     return 0;

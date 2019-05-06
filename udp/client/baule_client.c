@@ -266,6 +266,12 @@ int main(int argc, char **argv)
 
     printf("We sent this many packets: %d\n", i);
 	printf("File transfer complete: %s\n", file_name);
+
+    /*
+    -------------------------------------------------
+    Shutdown
+    -------------------------------------------------
+    */
     close(sfd);
     return 0;
 }
