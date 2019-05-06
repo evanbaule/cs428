@@ -35,19 +35,19 @@ int main(int argc, char **argv)
     char file_name[32];
     int file_size = 0;
     int num_packets = 0;
+	int total_written = 0;
     FILE* out_file_ptr;
 
     packet* pckt = malloc(PACKET_SIZE); //packet buffer
 
-    printf("Waiting on port %d\n", serv_port);
+    printf("Listening on port %d\n", serv_port);
     int brk = 1;
     while(brk)
     {
-        int ack_p_num = -1;
+        int ack_p_num = -1; //default to tail packet
+
         num_read = recvfrom(server_sfd, pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
-        printf("Bytes Read:\t%d\n", num_read);
         pckt->op_code = ntohs(pckt->op_code);
-        printf("Recieved packet with OP code: %d\n", pckt->op_code);
 
         switch (pckt->op_code)
         {
@@ -75,17 +75,13 @@ int main(int argc, char **argv)
                     perror("FAILED OPENING FILE");
                     exit(EXIT_FAILURE);
                 }
+
                 file_size = metadata->file_size;
                 num_packets = metadata->num_packets;
 
-                // packet_ack* ack = malloc(PACKET_SIZE);
-                // ack->op_code = 01;
-                // ack->packet_num = 0;
-                // char* ack_buff = malloc(PACKET_SIZE);
-                // ack_buff = (char*) ack;
-                // printf("Acknowledging metadata packet #: %d", ack->packet_num);
-                // write(rqst, ack_buff, PACKET_SIZE);
+				//Establish ack for META
                 ack_p_num = 0;
+
                 break;
             case 02: //Datagram Packet
                 printf("Received datagram packet... processing...\n");
@@ -95,7 +91,7 @@ int main(int argc, char **argv)
 
                 //convert endianness
                 dg->packet_num = ntohl(dg->packet_num);
-                ack_p_num = dg->packet_num;
+                ack_p_num = dg->packet_num; //establish ack for dg
 
                 printf("----------------------\n");
                 printf("Datagram summary:\n");
@@ -104,9 +100,7 @@ int main(int argc, char **argv)
                 //printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
                 //append to file
-                int written = 0;
-                written = fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
-                printf("Written: %d\n", written);
+                total_written += fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
 
                 break;
             case 03: //ACK Packet
@@ -128,6 +122,7 @@ int main(int argc, char **argv)
         sendto(server_sfd, ack, sizeof(ack), 0, (struct sockaddr *)&remaddr, addrlen);
     }
 
+	printf("Finished recieving: %s, total %d bytes written.\n", file_name, total_written);
     fclose(out_file_ptr);
     close(server_sfd);
     return 0;

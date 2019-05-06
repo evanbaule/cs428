@@ -1,6 +1,6 @@
 #include "../packet.h"
 
-void
+void //stole this froms S.O.just to print out the IP to check
 paddr(unsigned char *a)
 {
         printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
@@ -143,9 +143,8 @@ int main(int argc, char **argv)
         perror("Failed sending metadata to host");
         exit(EXIT_FAILURE);
     }
-    printf("Sizeof data sent: %d\n", num_sent);
 
-    struct sockaddr_in remaddr;
+    struct sockaddr_in remaddr; //not used?
     socklen_t addrlen = sizeof(remaddr);
 
     packet_ack* ack = malloc(PACKET_SIZE);
@@ -155,6 +154,11 @@ int main(int argc, char **argv)
     ack->op_code = ntohs(ack->op_code);
     ack->packet_num = ntohl(ack->packet_num);
 
+    /*
+    -------------------------------------------------
+    Acknowdledging Metadata Packet
+    -------------------------------------------------
+    */
     printf("Meta packet acknowledged:\n");
     printf("----------------------\n");
     printf("ACK summary:\n");
@@ -165,11 +169,16 @@ int main(int argc, char **argv)
     int i;
     for(i = 0; i < num_packets; i++)
     {
-        printf("PROCESSING PACKET: %d\n", i);
+    	/*
+    	-------------------------------------------------
+    	Configuring Datagram Packet
+    	-------------------------------------------------
+    	*/	
+        //printf("PROCESSING PACKET: %d\n", i);
         char buff[1494];
         memcpy(&buff, &file_buffer[i*1494], 1494);
         //printf("packet #: %d\n\t%s\n", i, buff);
-        printf("Packetizing data...\n");
+        //printf("Packetizing data...\n");
         packet_datagram* dg = malloc(PACKET_SIZE);
         dg->op_code = 02;
         dg->packet_num = i+1;
@@ -179,7 +188,7 @@ int main(int argc, char **argv)
         printf("Datagram summary:\n");
         printf("\t- OP: %d\n", dg->op_code);
         printf("\t- Packet #: %d\n", dg->packet_num);
-        printf("\t- Data:\n\t\t%s\n", dg->data);
+        //printf("\t- Data:\n\t\t%s\n", dg->data);
         printf("----------------------\n");
         printf("Dispatching datagram...\n");
 
@@ -192,27 +201,38 @@ int main(int argc, char **argv)
             perror("Failed sending datagram to host");
             exit(EXIT_FAILURE);
         }
-        printf("Sizeof data sent: %d\n", num_sent);
 
-        // read(client_sfd, ack_buff, PACKET_SIZE);
-        // printf("Datagram acknowledged...\n");
-        // ack = (packet_ack*) ack_buff;
-        // printf("----------------------\n");
-        // printf("ACK summary:\n");
-        // printf("\t- OP: %d\n", ack->op_code);
-        // printf("\t- Packet #: %d\n", ack->packet_num);
-        // printf("----------------------\n");
 
-        // if(ack->op_code != 3)
-        // {
-        //     fprintf(stderr, "ACK Packet %d had the wrong OP code: %d\n", i+1, ack->op_code);
-        // }
-        // if(ack->packet_num != i+1)
-        // {
-        //     fprintf(stderr, "ACK Packet # %d had the wrong packet number: %d\n", i+1, ack->packet_num);
-        // }
+		/*
+    	-------------------------------------------------
+    	Acknowledging Datagram Packet
+    	-------------------------------------------------
+    	*/	
+		int recvlen = recvfrom(sfd, ack, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
+		ack->op_code = ntohs(ack->op_code);
+		ack->packet_num = ntohl(ack->packet_num);
+        printf("Datagram acknowledged...\n");
+		printf("----------------------\n");
+		printf("ACK summary:\n");
+        printf("\t- OP: %d\n", ack->op_code);
+        printf("\t- Packet #: %d\n", ack->packet_num);
+        printf("----------------------\n");
+
+        if(ack->op_code != 3)
+        {
+             fprintf(stderr, "ACK Packet %d had the wrong OP code: %d\n", i+1, ack->op_code);
+        }
+        if(ack->packet_num != i+1)
+        {
+             fprintf(stderr, "ACK Packet # %d had the wrong packet number: %d\n", i+1, ack->packet_num);
+        }
     }
 
+	/*
+	-------------------------------------------------
+	Configuring Tail Packet
+	-------------------------------------------------
+	*/	
     packet_tail* tail = malloc(PACKET_SIZE);
     tail->op_code = 04;
     memset( tail->empty, 0, sizeof(tail->empty) );
@@ -230,31 +250,34 @@ int main(int argc, char **argv)
         perror("Failed sending metadata to host");
         exit(EXIT_FAILURE);
     }
-    //printf("Sizeof data sent: %d\n", num_sent);
 
-    // //Maybe make this a function since we use it twice
-    // read(client_sfd, ack_buff, PACKET_SIZE);
-    // printf("Tail packet acknowledged:\n");
-    // ack = (packet_ack*) ack_buff;
-    // printf("----------------------\n");
-    // printf("ACK summary:\n");
-    // printf("\t- OP: %d\n", ack->op_code);
-    // printf("\t- Packet #: %d\n", ack->packet_num);
-    // printf("----------------------\n");
 
-    // if(ack->op_code != 3)
-    // {
-    //     fprintf(stderr, "Tail ACK Packet had the wrong OP code: %d\n", ack->op_code);
-    // }
-    // if(ack->packet_num != i)
-    // {
-    //     fprintf(stderr, "Tail ACK Packet had the wrong packet number: %d\n", ack->packet_num);
-    // }
+	/*
+	-------------------------------------------------
+	Acknowledging Tail Packet
+	-------------------------------------------------
+	*/	
+	recvlen = recvfrom(sfd, ack, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
+	ack->op_code = ntohs(ack->op_code);
+	ack->packet_num = ntohl(ack->packet_num);
+    printf("Tail acknowledged...\n");
+	printf("----------------------\n");
+	printf("ACK summary:\n");
+    printf("\t- OP: %d\n", ack->op_code);
+    printf("\t- Packet #: %d (tail should be -1)\n", ack->packet_num);
+    printf("----------------------\n");
 
-    //printf("Hopefully we made it here without anything breaking...\n");
-
+    if(ack->op_code != 3)
+    {
+         fprintf(stderr, "ACK Packet %d had the wrong OP code: %d\n", i+1, ack->op_code);
+    }
+    if(ack->packet_num != -1) //tail is explicitly set to -1
+    {
+         fprintf(stderr, "ACK Packet # %d had the wrong packet number: %d\n", i+1, ack->packet_num);
+    }
 
     printf("We sent this many packets: %d\n", i);
+	printf("File transfer complete: %s\n", file_name);
     close(sfd);
     return 0;
 }
