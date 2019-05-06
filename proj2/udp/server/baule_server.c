@@ -1,4 +1,4 @@
-#include "packet.h"
+#include "../packet.h"
 
 int main(int argc, char **argv)
 {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                 printf("----------------------\n");
 
                 memcpy(file_name, metadata->file_name, 32);
-                out_file_ptr = fopen(file_name, "ab");
+                out_file_ptr = fopen(file_name, "wb");
                 if(!out_file_ptr)
                 {
                     perror("FAILED OPENING FILE");

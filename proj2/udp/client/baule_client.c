@@ -1,4 +1,4 @@
-#include "packet.h"
+#include "../packet.h"
 
 void
 paddr(unsigned char *a)
