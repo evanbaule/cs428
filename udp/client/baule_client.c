@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     Prepare file for transport
     -------------------------------------------------
     */
-    FILE *in_file = fopen(file_name, "r");
+    FILE *in_file = fopen(file_name, "rb");
 	if(!in_file)
 		exit(EXIT_FAILURE);
     fseek(in_file, 0, SEEK_END); //seek to end of the file so we know how big it is
@@ -177,14 +177,14 @@ int main(int argc, char **argv)
         printf("Datagram summary:\n");
         printf("\t- OP: %d\n", dg->op_code);
         printf("\t- Packet #: %d\n", dg->packet_num);
-        //printf("\t- Data:\n\t\t%s\n", dg->data);
+        printf("\t- Data:\n\t\t%s\n", dg->data);
         printf("----------------------\n");
         printf("Dispatching datagram...\n");
 
         dg->op_code = htons(dg->op_code);
         dg->packet_num = htonl(dg->packet_num);
 
-        if((num_sent = sendto(sfd, dg, sizeof(dg), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+        if((num_sent = sendto(sfd, (char*)dg, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
         {
             printf("Return value from sendto():\t%d\n", num_sent);
             perror("Failed sending datagram to host");

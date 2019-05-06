@@ -89,7 +89,7 @@ int main(int argc, char **argv)
                 printf("----------------------\n");
 
                 memcpy(file_name, metadata->file_name, 32);
-                out_file_ptr = fopen(file_name, "w");
+                out_file_ptr = fopen(file_name, "wb");
                 if(!out_file_ptr)
                 {
                     perror("FAILED OPENING FILE");
@@ -118,9 +118,11 @@ int main(int argc, char **argv)
                 printf("Datagram summary:\n");
                 printf("\t- OP: %d\n", dg->op_code);
                 printf("\t- Packet #: %d\n", dg->packet_num);
-                //printf("\t- Data:\n\t\t%s\n", dg->data);
+                printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
+				
 
+	
                 //append to file
                 if(file_size_copy < 1494)
                 {
@@ -130,7 +132,8 @@ int main(int argc, char **argv)
                 {
                     total_written += fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr);
                     file_size_copy -= sizeof(dg->data);
-                }
+                }	
+				
 
                 break;
             case 03: //ACK Packet
