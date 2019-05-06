@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     FILE* out_file_ptr;
 
     packet* pckt = malloc(PACKET_SIZE); //packet buffer
+	packet_ack *ack = malloc(PACKET_SIZE); //so that we only malloc once
 
     printf("Listening on port %d\n", serv_port);
     int brk = 1;
@@ -67,7 +68,7 @@ int main(int argc, char **argv)
         -------------------------------------------------
         */
         num_read = recvfrom(server_sfd, pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
-        pckt->op_code = ntohs(pckt->op_code);
+        pckt->op_code = ntohs(pckt->op_code); //read the opcode to decide how to process the packet we just got
 
         switch (pckt->op_code)
         {
@@ -103,6 +104,8 @@ int main(int argc, char **argv)
 				//Establish ack for META
                 ack_p_num = 0;
 
+				//free(metadata); //dont need anymore
+
                 break;
             case 02: //Datagram Packet
                 printf("Received datagram packet... processing...\n");
@@ -122,16 +125,18 @@ int main(int argc, char **argv)
                 printf("----------------------\n");
 				
                 //append to file
-                if(file_size_copy < 1494)
+                if(file_size_copy < 1494) // if we have less than a full data block to write, only write the remainder not 1494
                 {
+					//only write file data - no trailing 0s
                     total_written += fwrite(dg->data, sizeof(char), file_size_copy, out_file_ptr);
                 }
                 else
                 {
                     total_written += fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr);
-                    file_size_copy -= sizeof(dg->data);
+                    file_size_copy -= sizeof(dg->data); //this helps us only write the correct amt for the 
                 }	
 				
+				//free(dg); //free datagram after write
 
                 break;
             case 03: //ACK Packet
@@ -139,10 +144,10 @@ int main(int argc, char **argv)
                 exit(EXIT_FAILURE);
                 break;
             case 04: //Tail packet
-                brk = 0;
+                brk = 0; //set brk so that we break out of the inf loop and stop listening
                 break;
             default:
-                fprintf(stderr, "We should never have gotten to here\n");
+                fprintf(stderr, "We should never have gotten to here\n"); // <-- true
                 brk = 0;
                 break;
         }
@@ -152,12 +157,14 @@ int main(int argc, char **argv)
         Acknowledge The Packet We Just Got
         -------------------------------------------------
         */
-        packet_ack *ack = malloc(PACKET_SIZE);
+        
         ack->op_code = htons(3);
         ack->packet_num = htonl(ack_p_num);
         sendto(server_sfd, ack, sizeof(ack), 0, (struct sockaddr *)&remaddr, addrlen);
-    }
 
+		
+    }
+	
 	printf("Finished recieving: %s, total %d bytes written.\n", file_name, total_written);
 
     /*
@@ -165,6 +172,10 @@ int main(int argc, char **argv)
     Shutdown
     -------------------------------------------------
     */
+	
+	free(pckt);
+	free(ack);
+
     fclose(out_file_ptr);
     close(server_sfd);
     return 0;

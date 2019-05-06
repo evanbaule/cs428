@@ -154,6 +154,7 @@ int main(int argc, char **argv)
     printf("\t- OP: %d\n", ack->op_code);
     printf("\t- Packet #: %d\n", ack->packet_num);
     printf("----------------------\n");
+	free(metadata);
 
     int i;
     for(i = 0; i < num_packets; i++)
@@ -214,6 +215,8 @@ int main(int argc, char **argv)
         {
              fprintf(stderr, "ACK Packet # %d had the wrong packet number: %d\n", i+1, ack->packet_num);
         }
+
+		free(dg); //getting rid of the dg space
     }
 
 	/*
@@ -230,7 +233,7 @@ int main(int argc, char **argv)
     printf("----------------------\n");
     printf("Dispatching EOF tail packet, waiting for response\n");
 
-    tail->op_code = htons(tail->op_code);
+    tail->op_code = htons(tail->op_code); //convert endianness
 
     if((num_sent = sendto(sfd, (char*)tail, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
@@ -239,6 +242,8 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+	free(tail);
+
 
 	/*
 	-------------------------------------------------
@@ -246,8 +251,8 @@ int main(int argc, char **argv)
 	-------------------------------------------------
 	*/	
 	recvlen = recvfrom(sfd, ack, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
-	ack->op_code = ntohs(ack->op_code);
-	ack->packet_num = ntohl(ack->packet_num);
+	ack->op_code = ntohs(ack->op_code); //convert endianness
+	ack->packet_num = ntohl(ack->packet_num); //convert endianness
     printf("Tail acknowledged...\n");
 	printf("----------------------\n");
 	printf("ACK summary:\n");
@@ -255,6 +260,7 @@ int main(int argc, char **argv)
     printf("\t- Packet #: %d (tail should be -1)\n", ack->packet_num);
     printf("----------------------\n");
 
+	//confirm correct ACK format
     if(ack->op_code != 3)
     {
          fprintf(stderr, "ACK Packet %d had the wrong OP code: %d\n", i+1, ack->op_code);
@@ -267,11 +273,17 @@ int main(int argc, char **argv)
     printf("We sent this many packets: %d\n", i);
 	printf("File transfer complete: %s\n", file_name);
 
+
     /*
     -------------------------------------------------
     Shutdown
     -------------------------------------------------
     */
-    close(sfd);
+	//free all that heap memory
+	free(ack);
+	free(packets);
+	free(file_buffer);
+
+    close(sfd); //close socket
     return 0;
 }

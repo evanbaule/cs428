@@ -1,4 +1,9 @@
-# CS428 Project 2
+# CS428 Project 2 - UDP File Transfer
+# Evan Baule
+
+Resources:
+	https://www.cs.rutgers.edu/~pxk/417/notes/sockets/udp.html
+	Lots of Stack Overflow threads
 
 Compiling & Running: 
     Folder Structure
@@ -81,3 +86,11 @@ Packet structure:
          _____________________________________________(1500)__________________________________________________
         | OP  |                                 Empty                                                         |
         |_(2)_|_________________________________(1498)________________________________________________________|
+
+
+
+
+
+
+
+
