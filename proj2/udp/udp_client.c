@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 
     //printf("Sending data: %s\n", meta_buff);
     int num_sent = 0;
-    if((num_sent = sendto(sfd, (char*)metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+    if((num_sent = sendto(sfd, metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
         printf("Return value from sendto():\t%d\n", num_sent);
         perror("Failed sending metadata to host");
@@ -145,18 +145,22 @@ int main(int argc, char **argv)
     }
     printf("Sizeof data sent: %d\n", num_sent);
 
-    // struct sockaddr_in remaddr;
-    // socklen_t addrlen = sizeof(remaddr);
+    struct sockaddr_in remaddr;
+    socklen_t addrlen = sizeof(remaddr);
 
-    // char* ack_buff = malloc(PACKET_SIZE);
-    // int recvlen = recvfrom(sfd, ack_buff, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
-    // printf("Meta packet acknowledged:\n");
-    // packet_ack* ack = (packet_ack*) ack_buff;
-    // printf("----------------------\n");
-    // printf("ACK summary:\n");
-    // printf("\t- OP: %d\n", ack->op_code);
-    // printf("\t- Packet #: %d\n", ack->packet_num);
-    // printf("----------------------\n");
+    packet_ack* ack = malloc(PACKET_SIZE);
+    memset( ack->empty, 0, sizeof(ack->empty) );
+    int recvlen = recvfrom(sfd, ack, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
+    
+    ack->op_code = ntohs(ack->op_code);
+    ack->packet_num = ntohl(ack->packet_num);
+
+    printf("Meta packet acknowledged:\n");
+    printf("----------------------\n");
+    printf("ACK summary:\n");
+    printf("\t- OP: %d\n", ack->op_code);
+    printf("\t- Packet #: %d\n", ack->packet_num);
+    printf("----------------------\n");
 
     int i;
     for(i = 0; i < num_packets; i++)

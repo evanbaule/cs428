@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     char file_name[32];
     int file_size = 0;
     int num_packets = 0;
-    char* file_buffer;
+    FILE* out_file_ptr = fopen(file_name, "wb");
 
     packet* pckt = malloc(PACKET_SIZE); //packet buffer
 
@@ -43,7 +43,8 @@ int main(int argc, char **argv)
     int brk = 1;
     while(brk)
     {
-        num_read = recvfrom(server_sfd, (char*)pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
+        int ack_p_num = -1;
+        num_read = recvfrom(server_sfd, pckt, PACKET_SIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
         printf("Bytes Read:\t%d\n", num_read);
         pckt->op_code = ntohs(pckt->op_code);
         printf("Recieved packet with OP code: %d\n", pckt->op_code);
@@ -69,8 +70,6 @@ int main(int argc, char **argv)
 
                 memcpy(file_name, metadata->file_name, 32);
                 file_size = metadata->file_size;
-                file_buffer = malloc(file_size);
-
                 num_packets = metadata->num_packets;
 
                 // packet_ack* ack = malloc(PACKET_SIZE);
@@ -80,9 +79,9 @@ int main(int argc, char **argv)
                 // ack_buff = (char*) ack;
                 // printf("Acknowledging metadata packet #: %d", ack->packet_num);
                 // write(rqst, ack_buff, PACKET_SIZE);
+                ack_p_num = 0;
                 break;
             case 02: //Datagram Packet
-                /* code */
                 printf("Received datagram packet... processing...\n");
                 packet_datagram *dg = malloc(PACKET_SIZE);
 
@@ -90,20 +89,23 @@ int main(int argc, char **argv)
 
                 //convert endianness
                 dg->packet_num = ntohl(dg->packet_num);
+                ack_p_num = dg->packet_num;
 
                 printf("----------------------\n");
                 printf("Datagram summary:\n");
                 printf("\t- OP: %d\n", dg->op_code);
                 printf("\t- Packet #: %d\n", dg->packet_num);
-                printf("\t- Data:\n\t\t%s\n", dg->data);
+                //printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
+                //append to file
+                fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
+                
                 break;
             case 03: //ACK Packet
-                /* code */
                 printf("ERROR: SERVER RECEIVED AN ACK FOR SOME REASON\n");
+                exit(EXIT_FAILURE);
                 break;
             case 04: //Tail packet
-                /* code */
                 brk = 0;
                 break;
             default:
@@ -112,22 +114,10 @@ int main(int argc, char **argv)
                 break;
         }
 
-
-
-        // printf("----------------------\n");
-        // printf("Metadata summary:\n");
-        // printf("\t- OP: %d\n", metadata->op_code);
-        // printf("\t- File Name: %s\n", metadata->file_name);
-        // printf("\t- File Size: %d\n", metadata->file_size);
-        // printf("\t- # packets: %d\n", metadata->num_packets);
-        // printf("----------------------\n");
-
-
-        
-        // packet_datagram* pckt = malloc(PACKET_SIZE);
-        // pckt = (packet_datagram*) packet_buffer;
-        // printf("Serialized packet: %s\n", packet_buffer);
-        // printf("Recieved packet with OP code: %d\n", pckt->op_code + ' ');
+        packet_ack *ack = malloc(PACKET_SIZE);
+        ack->op_code = htons(3);
+        ack->packet_num = htonl(ack_p_num);
+        sendto(server_sfd, ack, sizeof(ack), 0, (struct sockaddr *)&remaddr, addrlen);
     }
 
     close(server_sfd);
