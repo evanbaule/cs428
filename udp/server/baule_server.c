@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     
     char file_name[32];
     int file_size = 0;
+    int file_size_copy = 0;
     int num_packets = 0;
 	int total_written = 0;
     FILE* out_file_ptr;
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
                 printf("----------------------\n");
 
                 memcpy(file_name, metadata->file_name, 32);
-                out_file_ptr = fopen(file_name, "wb");
+                out_file_ptr = fopen(file_name, "w");
                 if(!out_file_ptr)
                 {
                     perror("FAILED OPENING FILE");
@@ -77,6 +78,7 @@ int main(int argc, char **argv)
                 }
 
                 file_size = metadata->file_size;
+                file_size_copy = file_size;
                 num_packets = metadata->num_packets;
 
 				//Establish ack for META
@@ -99,8 +101,17 @@ int main(int argc, char **argv)
                 printf("\t- Packet #: %d\n", dg->packet_num);
                 //printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
+
                 //append to file
-                total_written += fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
+                if(file_size_copy < 1494)
+                {
+                    total_written += fwrite(dg->data, sizeof(char), file_size_copy, out_file_ptr);
+                }
+                else
+                {
+                    total_written += fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr);
+                    file_size_copy -= sizeof(dg->data);
+                }
 
                 break;
             case 03: //ACK Packet

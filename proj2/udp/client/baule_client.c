@@ -1,10 +1,10 @@
 #include "../packet.h"
 
-void
-paddr(unsigned char *a)
-{
-        printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
-}
+// void
+// paddr(unsigned char *a)
+// {
+//         printf("%d.%d.%d.%d\n", a[0], a[1], a[2], a[3]);
+// }
 
 int main(int argc, char **argv)
 {
@@ -81,11 +81,11 @@ int main(int argc, char **argv)
     }
     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 
-    //Print IP Address of Server
-    for (int i=0; hp->h_addr_list[i] != 0; i++)
-    {
-        paddr((unsigned char*) hp->h_addr_list[i]);
-    }
+    // //Print IP Address of Server
+    // for (int i=0; hp->h_addr_list[i] != 0; i++)
+    // {
+    //     paddr((unsigned char*) hp->h_addr_list[i]);
+    // }
 
     /*
     -------------------------------------------------
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 
     //printf("Sending data: %s\n", meta_buff);
     int num_sent = 0;
-    if((num_sent = sendto(sfd, metadata, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+    if((num_sent = sendto(sfd, metadata, sizeof(metadata), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
     {
         printf("Return value from sendto():\t%d\n", num_sent);
         perror("Failed sending metadata to host");

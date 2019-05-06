@@ -74,7 +74,6 @@ int main(int argc, char **argv)
     }
     memcpy((void *)&serv_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 
-
     /*
     -------------------------------------------------
     Prepare file for transport
@@ -98,9 +97,9 @@ int main(int argc, char **argv)
     Configure Metadata Packet
     -------------------------------------------------
     */
-    int num_packets = file_size / PACKET_SIZE + 1;
+    int num_packets = (file_size / 1494) + 1;
     printf("num_packets:\t%d\n", num_packets);
-    char* packets[num_packets];
+    char* packets = malloc(num_packets * 1500);
     
     packet_meta* metadata = malloc(PACKET_SIZE);
     memset( metadata->empty, 0, sizeof(metadata->empty) );
@@ -185,13 +184,12 @@ int main(int argc, char **argv)
         dg->op_code = htons(dg->op_code);
         dg->packet_num = htonl(dg->packet_num);
 
-        if((num_sent = sendto(sfd, (char*)dg, PACKET_SIZE, 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
+        if((num_sent = sendto(sfd, dg, sizeof(dg), 0, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0)
         {
             printf("Return value from sendto():\t%d\n", num_sent);
             perror("Failed sending datagram to host");
             exit(EXIT_FAILURE);
         }
-
 
 		/*
     	-------------------------------------------------
