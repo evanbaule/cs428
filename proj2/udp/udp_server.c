@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     char file_name[32];
     int file_size = 0;
     int num_packets = 0;
-    FILE* out_file_ptr = fopen(file_name, "wb");
+    FILE* out_file_ptr;
 
     packet* pckt = malloc(PACKET_SIZE); //packet buffer
 
@@ -69,6 +69,12 @@ int main(int argc, char **argv)
                 printf("----------------------\n");
 
                 memcpy(file_name, metadata->file_name, 32);
+                out_file_ptr = fopen(file_name, "ab");
+                if(!out_file_ptr)
+                {
+                    perror("FAILED OPENING FILE");
+                    exit(EXIT_FAILURE);
+                }
                 file_size = metadata->file_size;
                 num_packets = metadata->num_packets;
 
@@ -98,8 +104,10 @@ int main(int argc, char **argv)
                 //printf("\t- Data:\n\t\t%s\n", dg->data);
                 printf("----------------------\n");
                 //append to file
-                fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
-                
+                int written = 0;
+                written = fwrite(dg->data, sizeof(char), sizeof(dg->data), out_file_ptr); 
+                printf("Written: %d\n", written);
+
                 break;
             case 03: //ACK Packet
                 printf("ERROR: SERVER RECEIVED AN ACK FOR SOME REASON\n");
@@ -120,6 +128,7 @@ int main(int argc, char **argv)
         sendto(server_sfd, ack, sizeof(ack), 0, (struct sockaddr *)&remaddr, addrlen);
     }
 
+    fclose(out_file_ptr);
     close(server_sfd);
     return 0;
 }
