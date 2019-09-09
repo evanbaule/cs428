@@ -2,7 +2,7 @@
 # Evan Baule
 
 Resources:
-	https://www.cs.rutgers.edu/~pxk/417/notes/sockets/udp.html
+	Primary resource: https://www.cs.rutgers.edu/~pxk/417/notes/sockets/udp.html
 	Lots of Stack Overflow threads
 
 Compiling & Running: 
